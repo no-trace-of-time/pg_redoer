@@ -1,16 +1,20 @@
 {application, pg_redoer,
- [{description, "An OTP application"},
-  {vsn, "0.1.0"},
-  {registered, []},
-  {mod, { pg_redoer_app, []}},
-  {applications,
-   [kernel,
-    stdlib
-   ]},
-  {env,[]},
-  {modules, []},
+  [{description, "An OTP application"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {mod, {pg_redoer_app, []}},
+    {applications,
+      [kernel,
+        stdlib
+      ]},
+    {env, [
+      {notify_retry_count, 10}
+      , {notify_retry_timeout_seconds, 10}
 
-  {maintainers, []},
-  {licenses, ["Apache 2.0"]},
-  {links, []}
- ]}.
+    ]},
+    {modules, []},
+
+    {maintainers, []},
+    {licenses, ["Apache 2.0"]},
+    {links, []}
+  ]}.
