@@ -146,6 +146,7 @@ handle_info(timeout, #state{type = notify} = State) ->
 %%  PostString = xfutils:post_vals_to_string(PostBody),
 %%  lager:debug("PostString=~ts", [PostString]),
   try
+    lager:info("issue redoer's notify, Url = ~p,Body = ~ts", [Url, PostBody]),
     {200, _Header, _Body} = xfutils:post(Url, PostBody),
     lager:info("notify success, exit ...."),
     {stop, normal, State}
