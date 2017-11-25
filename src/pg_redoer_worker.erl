@@ -181,9 +181,8 @@ handle_info(timeout, #state{type = query} = State) ->
     lager:info("query result = ~p", [QueryResult]),
     HandledResult = apply(ResultHandleFun, [QueryResult]),
     lager:debug("HadnleResult =~p", [HandledResult]),
-    ok = HandledResult
-
-
+    ok = HandledResult,
+    {stop, normal, State}
   catch
     _:_X ->
       %% some thing wrong
