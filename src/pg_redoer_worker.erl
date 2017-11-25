@@ -179,7 +179,11 @@ handle_info(timeout, #state{type = query} = State) ->
     lager:info("issue redoer's query, UpIndexKey = ~p", [UpIndexKey]),
     QueryResult = apply(ActionFun, [UpIndexKey]),
     lager:info("query result = ~p", [QueryResult]),
-    ok = apply(ResultHandleFun, [QueryResult])
+    HandledResult = apply(ResultHandleFun, [QueryResult]),
+    lager:debug("HadnleResult =~p", [HandledResult]),
+    ok = HandledResult
+
+
   catch
     _:_X ->
       %% some thing wrong
