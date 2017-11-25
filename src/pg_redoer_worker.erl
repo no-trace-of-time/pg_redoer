@@ -27,7 +27,7 @@
 -define(SERVER, ?MODULE).
 -define(APP, pg_redoer).
 
--record(state, {type, url, post_vals, count}).
+-record(state, {type, url, post_vals, count, up_index_key, action_fun, result_handle_fun}).
 
 %%%===================================================================
 %%% API
@@ -39,12 +39,11 @@
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec start_link({notify, Url, PostBody}) ->
+-spec start_link(Param) ->
   {ok, Pid :: pid()} | ignore | {error, Reason :: term()} when
-  Url :: binary(),
-  PostBody :: binary() | iolist().
-start_link({notify, Url, PostBody}) ->
-  gen_server:start_link(?MODULE, [{notify, Url, PostBody}], []).
+  Param :: tuple().
+start_link(Param) ->
+  gen_server:start_link(?MODULE, [Param], []).
 
 
 %%%===================================================================
@@ -75,7 +74,20 @@ init([{notify, Url, PostBody}]) ->
     post_vals = PostBody,
     count = RetryCount
   },
-    0}.
+    0};
+init([{query, UpIndexKey, ActionFun, ResultHandleFun}])
+  when is_tuple(UpIndexKey), is_function(ActionFun), is_function(ResultHandleFun) ->
+  lager:debug("new query, UpIndexKey = ~p", [UpIndexKey]),
+  {ok, FirstTimeDelaySecons} = application:get_env(?APP, query_first_time_delay_seconds),
+  {ok, QueryRetryCount} = application:get_env(?APP, query_retry_count),
+  {ok, #state{
+    type = query,
+    up_index_key = UpIndexKey,
+    action_fun = ActionFun,
+    result_handle_fun = ResultHandleFun,
+    count = QueryRetryCount
+  }, FirstTimeDelaySecons}.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -150,6 +162,38 @@ handle_info(timeout, #state{type = notify} = State) ->
           {ok, Timeout} = application:get_env(notify_retry_timeout_seconds),
           ?debugFmt("Timeout = ~p,Count = ~p", [Timeout, Count]),
           {noreply, State#state{count = Count - 1}, Timeout * 1000}
+
+      end
+  end;
+handle_info(timeout, #state{type = query} = State) ->
+  %% timeout reached, need issue query txn to channel
+  #state{
+    up_index_key = UpIndexKey,
+    count = Count,
+    action_fun = ActionFun,
+    result_handle_fun = ResultHandleFun
+  } = State,
+
+  try
+    QueryResult = apply(ActionFun, [UpIndexKey]),
+    lager:info("query result = ~p", [QueryResult]),
+    ok = apply(ResultHandleFun, [QueryResult])
+  catch
+    _:_X ->
+      %% some thing wrong
+      %% maybe query result not succ
+      %% maybe query process fail
+      case Count of
+        1 ->
+          %% last time not succ
+          %% exit anyway
+          lager:error("Last query, still not success, aborted ..."),
+          {stop, normal, State};
+        _ ->
+          lager:error("query error ,retring ...", []),
+          {ok, TimeOut} = application:get_env(query_retry_timeout_seconds),
+          ?debugFmt("Timeout = ~p,Count = ~p", [TimeOut, Count]),
+          {noreply, State#state{count = Count - 1}, TimeOut * 1000}
 
       end
   end;

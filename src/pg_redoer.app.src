@@ -10,6 +10,9 @@
     {env, [
       {notify_retry_count, 10}
       , {notify_retry_timeout_seconds, 10}
+      , {query_retry_count, 10}
+      , {query_retry_timeout_seconds, 10}
+      , {query_first_time_delay_seconds, 10}
 
     ]},
     {modules, []},

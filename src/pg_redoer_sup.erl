@@ -26,7 +26,7 @@
 start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
-start_child({notify, Url, PostBody} = Param) when is_binary(Url), is_binary(PostBody) ->
+start_child(Param) ->
   Ret = supervisor:start_child(?SERVER, [Param]),
   lager:debug("Start redoer worker child, ret = ~p", [Ret]),
   ok.

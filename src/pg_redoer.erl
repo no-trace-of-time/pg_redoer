@@ -12,15 +12,21 @@
 %% API
 -export([
   add_notify/2
+  , add_query/3
   , list_child/0
-
-  , mcht_pay_succ/1
-  , mcht_refund/1
-  , mcht_refund/2
 ]).
+
+%%  , mcht_pay_succ/1
+%%  , mcht_refund/1
+%%  , mcht_refund/2
+%%]).
 
 add_notify(Url, PostBody) ->
   pg_redoer_sup:start_child({notify, Url, PostBody}).
+
+add_query(UpIndexKey, ActionFun, ResultHandleFun)
+  when is_tuple(UpIndexKey), is_function(ActionFun), is_function(ResultHandleFun) ->
+  pg_redoer_sup:start_child({query, UpIndexKey, ActionFun, ResultHandleFun}).
 
 list_child() ->
   supervisor:count_children(pg_redoer_sup).
