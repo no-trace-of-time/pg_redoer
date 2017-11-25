@@ -86,7 +86,7 @@ init([{query, UpIndexKey, ActionFun, ResultHandleFun}])
     action_fun = ActionFun,
     result_handle_fun = ResultHandleFun,
     count = QueryRetryCount
-  }, FirstTimeDelaySecons}.
+  }, FirstTimeDelaySecons * 1000}.
 
 
 %%--------------------------------------------------------------------
